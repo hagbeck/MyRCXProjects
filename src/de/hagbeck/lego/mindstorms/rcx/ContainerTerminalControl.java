@@ -25,8 +25,6 @@ import josx.rcxcomm.remotecontrol.*;
  * @author hagbeck (https://github.com/hagbeck)
  * @version 0.1, 2016-03-06
  *
- * One can find the code as a Gist on GitHub: https://gist.github.com/hagbeck/08f0f42607737aad1e99
- *
 */
 public class ContainerTerminalControl implements RemoteControlListener {        
 
@@ -62,7 +60,7 @@ public class ContainerTerminalControl implements RemoteControlListener {
         TextLCD.print(READY);
     }
 
-    // RemoteControListener interface methods
+    // RemoteControlListener interface methods
     
     /**
     * handler for the message 1 button
@@ -83,7 +81,7 @@ public class ContainerTerminalControl implements RemoteControlListener {
         else {
 
             Sensor.S1.activate();
-		}
+        }
 
         // change sensor state
         fSensorState[0] = !sensorState;
@@ -325,9 +323,59 @@ public class ContainerTerminalControl implements RemoteControlListener {
         // reset engine
         containerTerminalControl.reset();
 
-        // just run until RUN button is pressed again
-        Button.RUN.waitForPressAndRelease();
+        // material protection
+        Sensor.S1.setTypeAndMode(SensorConstants.SENSOR_TYPE_ROT, SensorConstants.SENSOR_MODE_ANGLE);
+        Sensor.S2.setTypeAndMode(SensorConstants.SENSOR_TYPE_TOUCH, SensorConstants.SENSOR_MODE_BOOL);
+        Sensor.S3.setTypeAndMode(SensorConstants.SENSOR_TYPE_TOUCH, SensorConstants.SENSOR_MODE_BOOL);
 
+        // motor power
+        Motor.A.setPower(5);
+        Motor.B.setPower(5);
+
+        // number of rotation
+        int n = 12;
+
+        // main loop
+        while (!Button.RUN.isPressed()) {
+
+            // driving control
+            if ( (Motor.A.isForward() && Sensor.S2.readBooleanValue()) || (Motor.A.isBackward() && Sensor.S3.readBooleanValue())) {
+
+                Motor.A.stop();
+                Sound.beepSequence();
+            }
+            // lift wagon control
+            else if (Motor.B.isBackward() && Sensor.S1.readValue() == n * 16) {
+
+                Motor.B.stop();
+                Sound.beepSequence();
+            }
+        }
+
+        // start reset sequence
+        Sound.twoBeeps();
+
+        Thread.sleep(2000);
+
+        Sound.twoBeeps();
+
+        // at least reset the wagon to the init position
+        Motor.B.backward();
+
+        while (true) {
+
+            if (Sensor.S1.readValue() == 0) {
+
+                Motor.B.stop();
+                break;
+            }
+            else if (Sensor.S1.readValue() == 2 * 16) {
+
+                Motor.B.setPower(1);
+            }
+        }
+
+        // exit program
         System.exit(0);
 	}
 }
