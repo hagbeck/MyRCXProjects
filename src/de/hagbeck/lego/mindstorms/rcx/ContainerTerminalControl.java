@@ -338,6 +338,8 @@ public class ContainerTerminalControl implements RemoteControlListener {
         // main loop
         while (!Button.RUN.isPressed()) {
 
+            LCD.showNumber(Sensor.S1.readValue());
+
             // driving control
             if ( (Motor.A.isForward() && Sensor.S2.readBooleanValue()) || (Motor.A.isBackward() && Sensor.S3.readBooleanValue())) {
 
